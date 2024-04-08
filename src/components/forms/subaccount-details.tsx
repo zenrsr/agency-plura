@@ -30,7 +30,7 @@ import { Agency, SubAccount } from "@prisma/client";
 import { useToast } from "../ui/use-toast";
 import { saveActivityLogsNotification, upsertSubAccount } from "@/lib/queries";
 import { useEffect } from "react";
-import Loader from "../global/loader";
+import Loading from "../global/loading";
 import { useModal } from "@/providers/modal-provider";
 
 const formSchema = z.object({
@@ -288,7 +288,7 @@ const SubAccountDetails: React.FC<SubAccountDetailsProps> = ({
               )}
             />
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? <Loader /> : "Save Account Information"}
+              {isLoading ? <Loading /> : "Save Account Information"}
             </Button>
           </form>
         </Form>

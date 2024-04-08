@@ -46,7 +46,7 @@ import {
   upsertAgency
 } from "@/lib/queries";
 import { Button } from "../ui/button";
-import Loader from "../global/loader";
+import Loading from "@/components/global/loading";
 import { v4 } from "uuid";
 
 type Props = {
@@ -387,7 +387,7 @@ const AgencyDetails = ({ data }: Props) => {
                 </div>
               )}
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? <Loader /> : "Save Agency Informationn"}
+                {isLoading ? <Loading /> : "Save Agency Informationn"}
               </Button>
             </form>
           </Form>

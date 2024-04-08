@@ -19,7 +19,7 @@ type ModalContextType = {
   setClose: () => void;
 };
 
-export const ModalContext = React.createContext<ModalContextType | undefined>({
+export const ModalContext = createContext<ModalContextType>({
   data: {},
   isOpen: false,
   setOpen: (modal: React.ReactNode, fetchData?: () => Promise<any>) => {},

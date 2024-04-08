@@ -38,7 +38,7 @@ import {
 import { Switch } from "../ui/switch";
 import { Separator } from "../ui/separator";
 import { Button } from "../ui/button";
-import Loader from "../global/loader";
+import Loading from "../global/loading";
 import {
   Select,
   SelectContent,
@@ -144,7 +144,7 @@ const UserDetails = ({ id, subAccounts, type, userData }: Props) => {
       if (updatedUser) {
         toast({
           title: "Success",
-          description: "Update User Information"
+          description: "Updated User Information"
         });
         setClose();
         router.refresh();
@@ -193,18 +193,18 @@ const UserDetails = ({ id, subAccounts, type, userData }: Props) => {
         description: "The request was successful"
       });
       if (subAccountsPermissions) {
-        subAccountsPermissions.Permissions.find((perm) => {
-          if (perm.subAccountId === subAccountId) {
-            return { ...perm, access: !perm.access };
+        subAccountsPermissions.Permissions.find((p) => {
+          if (p.subAccountId === subAccountId) {
+            return { ...p, access: !p.access };
           }
-          return perm;
+          return p;
         });
       }
     } else {
       toast({
         variant: "destructive",
         title: "Failed",
-        description: "Could not update permissions"
+        description: "🌋Could not update permissions"
       });
     }
     router.refresh();
@@ -328,7 +328,7 @@ const UserDetails = ({ id, subAccounts, type, userData }: Props) => {
             />
 
             <Button disabled={form.formState.isSubmitting} type="submit">
-              {form.formState.isSubmitting ? <Loader /> : "Save User Details"}
+              {form.formState.isSubmitting ? <Loading /> : "Save User Details"}
             </Button>
             {authUserData?.role === "AGENCY_OWNER" && (
               <div>

@@ -3,7 +3,7 @@
 import { clerkClient, currentUser } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 import { db } from "./db";
-import { Agency, Plan, SubAccount, User } from "@prisma/client";
+import { Agency, Plan, Role, SubAccount, User } from "@prisma/client";
 import { v4 } from "uuid";
 export const getUserDetails = async () => {
   const user = await currentUser();
@@ -31,6 +31,91 @@ export const getUserDetails = async () => {
   });
   return userData;
 };
+
+// export const saveActivityLogsNotification = async ({
+//   agencyId,
+//   description,
+//   subaccountId
+// }: {
+//   agencyId?: string;
+//   description: string;
+//   subaccountId?: string;
+// }) => {
+//   const authUser = await currentUser();
+//   let userData;
+//   if (!authUser) {
+//     const response = await db.user.findFirst({
+//       where: {
+//         Agency: {
+//           SubAccount: {
+//             some: { id: subaccountId }
+//           }
+//         }
+//       }
+//     });
+//     if (response) {
+//       userData = response;
+//     }
+//   } else {
+//     userData = await db.user.findUnique({
+//       where: { email: authUser?.emailAddresses[0].emailAddress }
+//     });
+//   }
+//   if (!userData) {
+//     console.log("No user found!");
+//     return;
+//   }
+//   let foundAgencyId = agencyId;
+//   if (!foundAgencyId) {
+//     if (!subaccountId) {
+//       throw new Error("You need to provide either agencyId or subaccountId");
+//     }
+//   }
+//   const response = await db.subAccount.findUnique({
+//     where: { id: subaccountId }
+//   });
+//   if (response) {
+//     foundAgencyId = response.agencyId;
+//   }
+//   if (subaccountId) {
+//     await db.notification.create({
+//       data: {
+//         notification: `${userData.name} | ${description}`,
+//         User: {
+//           connect: {
+//             id: userData.id
+//           }
+//         },
+//         Agency: {
+//           connect: {
+//             id: foundAgencyId
+//           }
+//         },
+//         SubAccount: {
+//           connect: {
+//             id: subaccountId
+//           }
+//         }
+//       }
+//     });
+//   } else {
+//     await db.notification.create({
+//       data: {
+//         notification: `${userData.name} | ${description}`,
+//         User: {
+//           connect: {
+//             id: userData.id
+//           }
+//         },
+//         Agency: {
+//           connect: {
+//             id: foundAgencyId
+//           }
+//         }
+//       }
+//     });
+//   }
+// };
 
 export const saveActivityLogsNotification = async ({
   agencyId,
@@ -61,21 +146,23 @@ export const saveActivityLogsNotification = async ({
       where: { email: authUser?.emailAddresses[0].emailAddress }
     });
   }
+
   if (!userData) {
-    console.log("No user found!");
+    console.log("Could not find a user");
     return;
   }
+
   let foundAgencyId = agencyId;
   if (!foundAgencyId) {
     if (!subaccountId) {
-      throw new Error("You need to provide either agencyId or subaccountId");
+      throw new Error(
+        "You need to provide at least an agency Id or subaccount Id"
+      );
     }
-  }
-  const response = await db.subAccount.findUnique({
-    where: { id: subaccountId }
-  });
-  if (response) {
-    foundAgencyId = response.agencyId;
+    const response = await db.subAccount.findUnique({
+      where: { id: subaccountId }
+    });
+    if (response) foundAgencyId = response.agencyId;
   }
   if (subaccountId) {
     await db.notification.create({
@@ -92,9 +179,7 @@ export const saveActivityLogsNotification = async ({
           }
         },
         SubAccount: {
-          connect: {
-            id: subaccountId
-          }
+          connect: { id: subaccountId }
         }
       }
     });
@@ -116,37 +201,6 @@ export const saveActivityLogsNotification = async ({
     });
   }
 };
-
-// export const saveActivityLogsNotification = async ({
-//     agencyId,
-//     description,
-//     subaccountId,
-//   }: {
-//     agencyId?: string
-//     description: string
-//     subaccountId?: string
-//   }) => {
-//     const authUser = await currentUser()
-//     let userData
-//     if (!authUser) {
-//       const response = await db.user.findFirst({
-//         where: {
-//           Agency: {
-//             SubAccount: {
-//               some: { id: subaccountId },
-//             },
-//           },
-//         },
-//       })
-//       if (response) {
-//         userData = response
-//       }
-//     } else {
-//       userData = await db.user.findUnique({
-//         where: { email: authUser?.emailAddresses[0].emailAddress },
-//       })
-//     }
-//   }
 
 export const verifyAndAcceptInvitation = async () => {
   const user = await currentUser();
@@ -404,7 +458,7 @@ export const getUserPermissions = async (userId: string) => {
 export const getAuthUserDetails = async () => {
   const user = await currentUser();
   if (!user) {
-    return;
+    return null;
   }
 
   const userData = await db.user.findUnique({
@@ -462,6 +516,59 @@ export const changeUserPermissions = async (
     });
     return response;
   } catch (error) {
-    console.log("🔴Could not change permission", error);
+    console.log("💥Could not change permission", error);
   }
+};
+
+export const getSubaccountDetails = async (subaccountId: string) => {
+  const response = await db.subAccount.findUnique({
+    where: { id: subaccountId }
+  });
+  return response;
+};
+
+export const deleteSubAccount = async (subaccountId: string) => {
+  const response = await db.subAccount.delete({ where: { id: subaccountId } });
+  return response;
+};
+
+export const deleteUser = async (userId: string) => {
+  await clerkClient.users.updateUserMetadata(userId, {
+    privateMetadata: {
+      Role: undefined
+    }
+  });
+  const deleteUser = await db.user.delete({ where: { id: userId } });
+  return deleteUser;
+};
+
+export const getUser = async (id: string) => {
+  const getUser = await db.user.findUnique({ where: { id } });
+  return getUser;
+};
+
+export const sendInvitation = async (
+  role: Role,
+  email: string,
+  agencyId: string
+) => {
+  const response = await db.invitation.create({
+    data: { email, agencyId, role }
+  });
+
+  try {
+    const invitation = await clerkClient.invitations.createInvitation({
+      emailAddress: email,
+      redirectUrl: process.env.NEXT_PUBLIC_URL,
+      publicMetadata: {
+        throughInvitation: true,
+        role
+      }
+    });
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+
+  return response;
 };
